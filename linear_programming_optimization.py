@@ -1,56 +1,76 @@
+import numpy as np
 from scipy.optimize import linprog
 import matplotlib.pyplot as plt
-import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 
-A11 = 0.3
-A12 = 0.4
-A21 = 0.5
-A22 = 0.6
-C1 = 0.9
-C2 = 0.8
-B1 = 4
-B2 = 4
-b = 80
-E1=E2=1
+A11 = np.array([[0.5, 0.3], [0.4, 0.3]])
+A12 = np.array([[0.3], [0.2]])  
+A21 = np.array([[0.3, 0.2]])
+A22 = np.array([[0.2]])
 
-c = [-C1*(E1-A11)+C2*A21, C2*(E2-A22)-C1*A12]
+b1 = np.array([50])
+b2 = np.array([150])
 
-A_ub = [[B1, B2],
-        [-E1+A11, -A12],
-        [-A21,-E2+A22]]
-b_ub = [b,0,0]
+B11 = np.array([0.6])
+B12 = np.array([0.5])
+B2 = np.array([0.4])
+E1 = E2 = 1
 
-x0_bounds = (0, None)
-x1_bounds = (0, None)
+C11=0.5
+C12=0.6
+C2=0.55
 
-res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=[x0_bounds, x1_bounds], method='highs')
+c_coeff = [-(C11 * (1 - A11[0][0]) - C12 * A11[1][0] - C2*A21[0][0]),
+            -(-C11*A11[0][1]+C12*(1-A11[1][1])-C2*A21[0][1]),
+            -(-C11*A12[0]-C12*A12[1]-C2*(A22-1))]
 
-print('Optimal value:', -res.fun, '\nX1, X2:', res.x)
+A_ub = [[B11[0], B12[0], B2[0]],
+        [-1 + A11[0][0], A11[0][1],  A12[0]],
+        [A11[1][0], -1 + A11[1][1], A12[1]],
+        [-A21[0][0], -A21[0][1], -A22+1]]  
+b_vector = [b2[0], 0, 0, 0]
+x_bounds = [(0, None), (0, None), (0, None)]  
 
-x1_values = np.linspace(0, 100, 400)
-x2_values = np.linspace(0, 100, 400)
+res = linprog(c_coeff, A_ub=A_ub, b_ub=b_vector, bounds=x_bounds, method='highs')
+y11=(1-A11[0][0])*res.x[0]-A11[0][1]*res.x[1]-A12[0]*res.x[2]
+y12=-A11[1][0]*res.x[0]+(1-A11[1][1])*res.x[1]-A12[1]*res.x[2]
+y2=A21[0][0]*res.x[0]+A21[0][1]*res.x[1]+(A22-1)*res.x[2] 
+b=B11[0]*res.x[0]+B12[0]*res.x[1]+B2[0]*res.x[2]
 
-constraint1 = (1 - A11) * x1_values / A12
-constraint2 = A21 * x1_values / (1 - A22)
-constraint3 = (b - B1 * x1_values) / B2
+if res.success and y11>=0 and y12>=0 and y2>=0 and b>=b2[0]:
+    print("Optimal Solution=", -res.fun, "x_values=", res.x)
 
-plt.figure(figsize=(10,10))
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
 
-plt.plot(x1_values, constraint1, label='(E1 - A11) * x1 - A12 * x2 >= 0')
-plt.fill_between(x1_values, 0, constraint1, where=(x2_values<=constraint1), alpha=0.1, color='red')
+ax.scatter(res.x[0], res.x[1], res.x[2], c='r', marker='o')
+x11_grid, x12_grid = np.meshgrid(np.linspace(0, 300, 300),
+                                 np.linspace(0, 300, 300))
 
-plt.plot(x1_values, constraint2, label='A21 * x1 - (E2 - A22) * x2 >= 0')
-plt.fill_between(x1_values, 0, constraint2, where=(x2_values<=constraint2), alpha=0.1, color='blue')
+x2_grid1 = ((1 - A11[0][0]) * x11_grid - A11[0][1] * x12_grid) / A12[0]
+x2_grid2 = (-A11[1][0] * x11_grid + (1 - A11[1][1]) * x12_grid) / A12[1]
+x2_grid3 = (A21[0][0] * x11_grid + A21[0][1] * x12_grid + (A22 - 1) * x2_grid2)
+x2_grid4 = (b2[0] - B11[0]*x11_grid - B12[0]*x12_grid) / B2[0]
 
-plt.plot(x1_values, constraint3, label='B1 * x1 + B2 * x2 <= b')
-plt.fill_between(x1_values, constraint3, 0, alpha=0.1, color='green')
+x2_grid1[x2_grid1 > 200] = np.nan
+x2_grid2[x2_grid2 > 200] = np.nan
+x2_grid3[x2_grid3 > 200] = np.nan
+x2_grid4[x2_grid4 > 200] = np.nan
 
-plt.plot(res.x[0], res.x[1], 'ro')
+x2_grid1[0 > x2_grid1] = np.nan
+x2_grid2[0 > x2_grid2] = np.nan
+x2_grid3[0 > x2_grid3] = np.nan
+x2_grid4[0 > x2_grid4] = np.nan
 
-plt.xlim(0, 50)
-plt.ylim(0, 50)
-plt.xlabel('x1')
-plt.ylabel('x2')
-plt.legend()
-plt.grid(True)
+ax.plot_surface(x11_grid, x12_grid, x2_grid1, color='b', alpha=0.5, rstride=100, cstride=100)
+ax.plot_surface(x11_grid, x12_grid, x2_grid2, color='y', alpha=0.5, rstride=100, cstride=100)
+ax.plot_surface(x11_grid, x12_grid, x2_grid3, color='g', alpha=0.5, rstride=100, cstride=100)
+ax.plot_surface(x11_grid, x12_grid, x2_grid4, color='r', alpha=0.5, rstride=100, cstride=100)
+
+ax.set_xlabel('X11')
+ax.set_ylabel('X12')
+ax.set_zlabel('X2')
+ax.set_zlim([0, 200])
+plt.xlim(0, 200)
+plt.ylim(0, 200)
 plt.show()
