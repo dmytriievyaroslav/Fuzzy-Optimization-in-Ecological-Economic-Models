@@ -14,3 +14,11 @@ Scenario Analysis: Tools to simulate and analyze various scenarios to understand
 # Documentation
 
 All theoretical explanations, detailed descriptions, and results of the code implementation are thoroughly documented in the file FOinEEM_theory_explanation_and_code_results.pdf. This document serves as a valuable resource for understanding the foundations of the fuzzy optimization techniques applied within the project and for exploring the outcomes of the ecological-economic models developed.
+
+# List Of Reference Sources
+
+Klir G.J., Yuan B. Fuzzy Sets and Fuzzy Logic: Theory and Applications – New York: Prentice Hall, 1995. – 592 p.
+McKinney W. Python for Data Analysis: Data Wrangling with Pandas, NumPy, and IPython – Sebastopol: O'Reilly Media, 2018. – 544 p.
+Leontief W. Input-Output Economics – New York: Oxford University Press, 1986. – 436 p.
+Lyashenko I.M. Modeling Economic, Ecological, and Social Processes: Educational Manual / I.M. Lyashenko, M.V. Korobova, I.A. Horitsyna. - Kyiv: Publishing and Printing Center "Kyiv University", 2010. - 320 p.
+Lyashenko I.M. Economic-Mathematical Methods and Models of Sustainable Development - Kyiv: Higher School, 1999. - 236 p.
